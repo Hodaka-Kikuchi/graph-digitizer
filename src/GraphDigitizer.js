@@ -1,3 +1,5 @@
+// npm start
+
 import React, { useRef, useState, useEffect } from "react";
 import {
   Stage,
@@ -180,7 +182,7 @@ export default function GraphDigitizer() {
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
 
-    const filename = prompt("ファイル名を入力", "data.csv");
+    const filename = prompt("Please enter the filename.", "data.csv");
 
     const a = document.createElement("a");
     a.href = url;
@@ -216,9 +218,9 @@ export default function GraphDigitizer() {
 
         <hr />
 
-        <button onClick={saveCSV}>CSV保存</button>
-        <button onClick={deleteSelected}>選択削除</button>
-        <button onClick={clearAll}>全削除</button>
+        <button onClick={saveCSV}>save CSV file</button>
+        <button onClick={deleteSelected}>delete selected datas</button>
+        <button onClick={clearAll}>delete all datas</button>
 
         <hr />
 
