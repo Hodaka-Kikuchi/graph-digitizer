@@ -32,11 +32,8 @@ export default function GraphDigitizer() {
   const [points, setPoints] = useState([]);
   const [selected, setSelected] = useState([]);
 
-  const [mode, setMode] = useState("pick");
-
   const [scale, setScale] = useState(1);
 
-  // ⚠️ 文字列で保持（小数入力対策）
   const [axis, setAxis] = useState({
     xmin: "0",
     xmax: "10",
@@ -44,8 +41,11 @@ export default function GraphDigitizer() {
     ymax: "10",
   });
 
+  const [logX, setLogX] = useState(false);
+  const [logY, setLogY] = useState(false);
+
   // ======================
-  // Transformer接続
+  // Transformer
   // ======================
   useEffect(() => {
     if (rectRef.current && trRef.current) {
@@ -55,7 +55,7 @@ export default function GraphDigitizer() {
   }, [imgObj]);
 
   // ======================
-  // ファイル読み込み
+  // file load
   // ======================
   const handleFile = (e) => {
     const file = e.target.files[0];
@@ -89,9 +89,6 @@ export default function GraphDigitizer() {
     }
   };
 
-  // ======================
-  // 画像ロード（スケール付き）
-  // ======================
   const loadImage = (src) => {
     const img = new window.Image();
     img.src = src;
@@ -106,11 +103,40 @@ export default function GraphDigitizer() {
   };
 
   // ======================
-  // クリックでデータ取得
+  // transform
   // ======================
-  const handleClick = (e) => {
-    if (mode !== "pick" || !imgObj) return;
+  const transformX = (xNorm) => {
+    const xmin = parseFloat(axis.xmin);
+    const xmax = parseFloat(axis.xmax);
 
+    if (!logX) {
+      return xmin + xNorm * (xmax - xmin);
+    }
+
+    const lx = Math.log10(xmin);
+    const ux = Math.log10(xmax);
+
+    return Math.pow(10, lx + xNorm * (ux - lx));
+  };
+
+  const transformY = (yNorm) => {
+    const ymin = parseFloat(axis.ymin);
+    const ymax = parseFloat(axis.ymax);
+
+    if (!logY) {
+      return ymin + yNorm * (ymax - ymin);
+    }
+
+    const ly = Math.log10(ymin);
+    const uy = Math.log10(ymax);
+
+    return Math.pow(10, ly + yNorm * (uy - ly));
+  };
+
+  // ======================
+  // click
+  // ======================
+  const handleClick = () => {
     const stage = stageRef.current;
     const pos = stage.getPointerPosition();
 
@@ -120,13 +146,8 @@ export default function GraphDigitizer() {
     const xNorm = (pos.x - x0) / rect.width;
     const yNorm = 1 - (pos.y - y0) / rect.height;
 
-    const xVal =
-      parseFloat(axis.xmin) +
-      xNorm * (parseFloat(axis.xmax) - parseFloat(axis.xmin));
-
-    const yVal =
-      parseFloat(axis.ymin) +
-      yNorm * (parseFloat(axis.ymax) - parseFloat(axis.ymin));
+    const xVal = transformX(xNorm);
+    const yVal = transformY(yNorm);
 
     setPoints([
       ...points,
@@ -135,7 +156,7 @@ export default function GraphDigitizer() {
   };
 
   // ======================
-  // 削除
+  // delete
   // ======================
   const deleteSelected = () => {
     setPoints(points.filter((_, i) => !selected.includes(i)));
@@ -148,7 +169,7 @@ export default function GraphDigitizer() {
   };
 
   // ======================
-  // CSV保存（名前入力付き）
+  // CSV
   // ======================
   const saveCSV = () => {
     let csv = "X,Y\n";
@@ -171,92 +192,22 @@ export default function GraphDigitizer() {
   // UI
   // ======================
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100vh",
-        overflow: "hidden",
-      }}
-    >
-      {/* ===== 左パネル ===== */}
-      <div
-        style={{
-          width: 320,
-          overflowY: "auto",
-          padding: 10,
-          borderRight: "1px solid #ccc",
-        }}
-      >
+    <div style={{ display: "flex", height: "100vh" }}>
+
+      {/* ================= LEFT ================= */}
+      <div style={{ width: 320, padding: 10, overflowY: "auto" }}>
+
         <input type="file" onChange={handleFile} />
 
-        <button onClick={() => setMode("pick")}>
-          データ取得
-        </button>
-
-        <button onClick={saveCSV}>CSV保存</button>
-        <button onClick={deleteSelected}>選択削除</button>
-        <button onClick={clearAll}>全削除</button>
-
         <hr />
 
-        {/* 軸入力（小数OK） */}
-        <div style={{ marginTop: 10 }}>
-
-          <div style={{ marginBottom: 8 }}>
-            <div>X min</div>
-            <input
-              style={{ width: "100%" }}
-              value={axis.xmin}
-              onChange={(e) =>
-                setAxis({ ...axis, xmin: e.target.value })
-              }
-            />
-          </div>
-
-          <div style={{ marginBottom: 8 }}>
-            <div>X max</div>
-            <input
-              style={{ width: "100%" }}
-              value={axis.xmax}
-              onChange={(e) =>
-                setAxis({ ...axis, xmax: e.target.value })
-              }
-            />
-          </div>
-
-          <div style={{ marginBottom: 8 }}>
-            <div>Y min</div>
-            <input
-              style={{ width: "100%" }}
-              value={axis.ymin}
-              onChange={(e) =>
-                setAxis({ ...axis, ymin: e.target.value })
-              }
-            />
-          </div>
-
-          <div style={{ marginBottom: 8 }}>
-            <div>Y max</div>
-            <input
-              style={{ width: "100%" }}
-              value={axis.ymax}
-              onChange={(e) =>
-                setAxis({ ...axis, ymax: e.target.value })
-              }
-            />
-          </div>
-
-        </div>
-
-        <hr />
-
-        {/* ズーム */}
+        {/* SCALE */}
         <div>
           Scale: {scale.toFixed(2)}
           <input
             type="range"
             min="0.1"
-            max="3"
+            max="2"
             step="0.05"
             value={scale}
             onChange={(e) => setScale(+e.target.value)}
@@ -265,7 +216,65 @@ export default function GraphDigitizer() {
 
         <hr />
 
-        {/* テーブル */}
+        <button onClick={saveCSV}>CSV保存</button>
+        <button onClick={deleteSelected}>選択削除</button>
+        <button onClick={clearAll}>全削除</button>
+
+        <hr />
+
+        {/* ================= X AXIS ================= */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <strong>X Axis</strong>
+          <button onClick={() => setLogX(!logX)}>
+            log10 X: {logX ? "ON" : "OFF"}
+          </button>
+        </div>
+
+        <div>X min</div>
+        <input
+          value={axis.xmin}
+          onChange={(e) =>
+            setAxis({ ...axis, xmin: e.target.value })
+          }
+        />
+
+        <div>X max</div>
+        <input
+          value={axis.xmax}
+          onChange={(e) =>
+            setAxis({ ...axis, xmax: e.target.value })
+          }
+        />
+
+        <hr />
+
+        {/* ================= Y AXIS ================= */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <strong>Y Axis</strong>
+          <button onClick={() => setLogY(!logY)}>
+            log10 Y: {logY ? "ON" : "OFF"}
+          </button>
+        </div>
+
+        <div>Y min</div>
+        <input
+          value={axis.ymin}
+          onChange={(e) =>
+            setAxis({ ...axis, ymin: e.target.value })
+          }
+        />
+
+        <div>Y max</div>
+        <input
+          value={axis.ymax}
+          onChange={(e) =>
+            setAxis({ ...axis, ymax: e.target.value })
+          }
+        />
+
+        <hr />
+
+        {/* ================= TABLE ================= */}
         <table border="1">
           <thead>
             <tr>
@@ -301,8 +310,8 @@ export default function GraphDigitizer() {
         </table>
       </div>
 
-      {/* ===== 右キャンバス ===== */}
-      <div style={{ flex: 1, overflow: "hidden" }}>
+      {/* ================= CANVAS ================= */}
+      <div style={{ flex: 1 }}>
         <Stage
           width={window.innerWidth - 320}
           height={window.innerHeight}
@@ -314,7 +323,6 @@ export default function GraphDigitizer() {
               <Image image={imgObj} scaleX={scale} scaleY={scale} />
             )}
 
-            {/* ROI */}
             <Rect
               ref={rectRef}
               x={rect.x}
@@ -347,16 +355,13 @@ export default function GraphDigitizer() {
 
             <Transformer ref={trRef} />
 
-            {/* points */}
             {points.map((p, i) => (
               <Circle
                 key={i}
                 x={p.px}
                 y={p.py}
                 radius={4}
-                fill={
-                  selected.includes(i) ? "blue" : "red"
-                }
+                fill={selected.includes(i) ? "blue" : "red"}
               />
             ))}
           </Layer>
