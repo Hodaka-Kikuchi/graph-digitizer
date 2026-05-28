@@ -2,7 +2,7 @@
   "name": "graph-digitizer",
   "version": "1.0.0",
   "private": false,
-  "homepage": "https://YOUR_GITHUB_USERNAME.github.io/graph-digitizer",
+  "homepage": "https://Hodaka-Kikuchi.github.io/graph-digitizer",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
