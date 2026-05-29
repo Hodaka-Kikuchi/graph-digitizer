@@ -682,7 +682,10 @@ export default function GraphDigitizer() {
             />
 
             {/* TRANSFORMER */}
-            <Transformer ref={trRef} />
+            <Transformer
+              ref={trRef}
+              rotateEnabled={false}
+            />
 
             {/* POINTS */}
             {points.map((p, i) => (
