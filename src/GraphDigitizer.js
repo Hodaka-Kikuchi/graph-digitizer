@@ -12,7 +12,7 @@ import {
 import * as pdfjsLib from "pdfjs-dist";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+  process.env.PUBLIC_URL + "/pdf.worker.min.js";
 
 export default function GraphDigitizer() {
   const stageRef = useRef();
@@ -65,25 +65,40 @@ export default function GraphDigitizer() {
 
     if (file.type === "application/pdf") {
       const reader = new FileReader();
+
       reader.onload = async function () {
-        const typedArray = new Uint8Array(this.result);
+        try {
+          const typedArray = new Uint8Array(this.result);
 
-        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 2 });
+          const pdf = await pdfjsLib
+            .getDocument({ data: typedArray })
+            .promise;
 
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
+          const page = await pdf.getPage(1);
 
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+          const viewport = page.getViewport({ scale: 2 });
 
-        await page.render({ canvasContext: ctx, viewport }).promise;
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
 
-        loadImage(canvas.toDataURL());
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          await page.render({
+            canvasContext: ctx,
+            viewport,
+          }).promise;
+
+          loadImage(canvas.toDataURL());
+
+        } catch (err) {
+          console.error("PDF ERROR:", err);
+          alert("PDF読み込み失敗");
+        }
       };
 
       reader.readAsArrayBuffer(file);
+    
     } else {
       const reader = new FileReader();
       reader.onload = () => loadImage(reader.result);
