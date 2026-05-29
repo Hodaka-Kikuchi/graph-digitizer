@@ -9,11 +9,13 @@ import {
   Circle,
   Transformer,
 } from "react-konva";
+
 import * as pdfjsLib from "pdfjs-dist";
 
+// ★重要
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  process.env.PUBLIC_URL + "/pdf.worker.min.js";
-
+  `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+  
 export default function GraphDigitizer() {
   const stageRef = useRef();
   const rectRef = useRef();
